@@ -1,4 +1,4 @@
-FROM golang:alpine3.12 as builder
+FROM golang:alpine3.15 as builder
 
 COPY . /usr/src/sriov-network-device-plugin
 ADD images/ddptool-1.0.1.12.tar.gz /tmp/ddptool/
@@ -14,7 +14,7 @@ RUN make clean && \
 WORKDIR /tmp/ddptool
 RUN make
 
-FROM alpine:3.12
+FROM alpine:3.15
 RUN apk add --no-cache hwdata-pci
 COPY --from=builder /usr/src/sriov-network-device-plugin/build/sriovdp /usr/bin/
 COPY --from=builder /tmp/ddptool/ddptool /usr/bin/
