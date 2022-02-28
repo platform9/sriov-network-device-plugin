@@ -31,6 +31,8 @@ COVERAGE_HTML = $(COVERAGE_DIR)/index.html
 # Docker image
 DOCKERFILE?=$(CURDIR)/images/Dockerfile
 TAG=docker.io/nfvpe/sriov-device-plugin
+BUILD_NUMBER ?= 1
+PF9_TAG=docker.io/platform9/sriov-network-device-plugin:v3.3.2-pmk-$(BUILD_NUMBER)
 # Docker arguments - To pass proxy for Docker invoke it as 'make image HTTP_POXY=http://192.168.0.1:8080'
 DOCKERARGS=
 ifdef HTTP_PROXY
@@ -137,6 +139,14 @@ deps-update: ; $(info  Updating dependencies...) @ ## Update dependencies
 .PHONY: image
 image: | $(BASE) ; $(info Building Docker image...) @ ## Build SR-IOV Network device plugin docker image
 	@docker build -t $(TAG) -f $(DOCKERFILE)  $(CURDIR) $(DOCKERARGS)
+
+# PF9 changes
+pf9-image: | $(BUILDDIR) ; $(info Building Docker image for pf9 Repo...) @ ## Build SR-IOV Network device plugin docker image
+	@docker build -t $(PF9_TAG) -f $(DOCKERFILE)  $(CURDIR) $(DOCKERARGS)
+	echo ${PF9_TAG} > $(BUILDDIR)/container-tag
+
+pf9-push: pf9-image
+	docker push $(PF9_TAG)
 
 .PHONY: clean
 clean: ; $(info  Cleaning...) @ ## Cleanup everything
