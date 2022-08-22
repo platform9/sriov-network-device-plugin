@@ -30,11 +30,18 @@ COVERAGE_MODE = atomic
 COVERAGE_PROFILE = $(COVERAGE_DIR)/profile.out
 COVERAGE_XML = $(COVERAGE_DIR)/coverage.xml
 COVERAGE_HTML = $(COVERAGE_DIR)/index.html
+
+UPSTREAM_VERSION=$(shell git describe --tags HEAD)
+
+registry_url ?= 514845858982.dkr.ecr.us-west-1.amazonaws.com
+#registry_url ?= docker.io
+
+image_name = ${registry_url}/platform9/sriov-network-device-plugin
+image_tag = $(UPSTREAM_VERSION)-pmk-$(TEAMCITY_BUILD_ID)
 # Docker image
 DOCKERFILE?=$(CURDIR)/images/Dockerfile
 TAG?=ghcr.io/k8snetworkplumbingwg/sriov-network-device-plugin
-BUILD_NUMBER ?= 2
-PF9_TAG=docker.io/platform9/sriov-network-device-plugin:v3.3.2-pmk-$(BUILD_NUMBER)
+PF9_TAG=$(image_name):${image_tag}
 # Docker arguments - To pass proxy for Docker invoke it as 'make image HTTP_POXY=http://192.168.0.1:8080'
 DOCKERARGS=
 ifdef HTTP_PROXY
@@ -155,7 +162,12 @@ pf9-image: | $(BUILDDIR) ; $(info Building Docker image for pf9 Repo...) @ ## Bu
 	echo ${PF9_TAG} > $(BUILDDIR)/container-tag
 
 pf9-push: pf9-image
-	docker push $(PF9_TAG)
+	docker push $(PF9_TAG)\
+	&& docker rmi $(PF9_TAG)
+	(docker push $(PF9_TAG)  || \
+		(aws ecr get-login --region=us-west-1 --no-include-email | sh && \
+		docker push $(PF9_TAG))) && \
+		docker rmi $(PF9_TAG)
 .PHONY: clean
 clean: ; $(info  Cleaning...) @ ## Cleanup everything
 	@go clean --modcache --cache --testcache
