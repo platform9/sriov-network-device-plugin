@@ -20,6 +20,10 @@ ORG_PATH=github.com/k8snetworkplumbingwg
 # Build info
 BUILDDIR=$(CURDIR)/build
 REPO_PATH=$(ORG_PATH)/$(PACKAGE)
+
+SRC_ROOT=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/)
+BUILD_ROOT = $(SRC_ROOT)/build
+
 BASE=$(GOPATH)/src/$(REPO_PATH)
 PKGS = $(or $(PKG),$(shell cd $(BASE) && env GOPATH=$(GOPATH) go list ./... | grep -v "^$(PACKAGE)/vendor/"))
 GOFILES = $(shell find . -name *.go | grep -vE "(\/vendor\/)|(_test.go)")
@@ -169,6 +173,11 @@ pf9-push: pf9-image
 		(aws ecr get-login --region=us-west-1 --no-include-email | sh && \
 		docker push $(PF9_TAG))) && \
 		docker rmi $(PF9_TAG)
+
+scan: 
+	docker run -v $(BUILD_ROOT)/sriov-network:/out -v /var/run/docker.sock:/var/run/docker.sock  aquasec/trivy image -s CRITICAL,HIGH -f json  --vuln-type library -o /out/library_vulnerabilities.json --exit-code 22 ${PF9_TAG}
+	docker run -v $(BUILD_ROOT)/sriov-network:/out -v /var/run/docker.sock:/var/run/docker.sock  aquasec/trivy image -s CRITICAL,HIGH -f json  --vuln-type os -o /out/os_vulnerabilities.json --exit-code 22 ${PF9_TAG}
+
 .PHONY: clean
 clean: ; $(info  Cleaning...) @ ## Cleanup everything
 	@go clean --modcache --cache --testcache
