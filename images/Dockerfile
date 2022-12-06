@@ -7,11 +7,13 @@ ENV HTTP_PROXY $http_proxy
 ENV HTTPS_PROXY $https_proxy
 RUN apk add --no-cache --virtual build-dependencies build-base linux-headers git
 
+
 WORKDIR /usr/src/sriov-network-device-plugin
 RUN make clean && \
     make build
 
 WORKDIR /tmp/ddptool
+RUN gcc --version
 RUN make
 
 FROM alpine:3
