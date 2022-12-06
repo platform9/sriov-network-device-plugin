@@ -30,9 +30,19 @@ COVERAGE_MODE = atomic
 COVERAGE_PROFILE = $(COVERAGE_DIR)/profile.out
 COVERAGE_XML = $(COVERAGE_DIR)/coverage.xml
 COVERAGE_HTML = $(COVERAGE_DIR)/index.html
+
+UPSTREAM_VERSION=$(shell git describe --tags HEAD)
+registry_url ?= docker.io
+
+image_name = ${registry_url}/platform9/sriov-network-device-plugin
+image_tag = $(UPSTREAM_VERSION)-pmk-$(TEAMCITY_BUILD_ID)
+
+SRC_ROOT=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/)
+BUILD_ROOT = $(SRC_ROOT)/build
 # Docker image
 DOCKERFILE?=$(CURDIR)/images/Dockerfile
 TAG?=ghcr.io/k8snetworkplumbingwg/sriov-network-device-plugin
+PF9_TAG?=$(image_name):${image_tag}
 # Docker arguments - To pass proxy for Docker invoke it as 'make image HTTP_POXY=http://192.168.0.1:8080'
 DOCKERARGS=
 ifdef HTTP_PROXY
@@ -146,6 +156,19 @@ deps-update: ; $(info  Updating dependencies...) @ ## Update dependencies
 .PHONY: image
 image: | $(BASE) ; $(info Building Docker image...) @ ## Build SR-IOV Network device plugin docker image
 	@docker build -t $(TAG) -f $(DOCKERFILE)  $(CURDIR) $(DOCKERARGS)
+
+pf9-image: | $(BUILDDIR) ; $(info Building Docker image for pf9 Repo...) @ ## Build SR-IOV Network device plugin docker image
+	@docker build -t $(PF9_TAG) -f $(DOCKERFILE)  $(CURDIR) $(DOCKERARGS)
+	echo ${PF9_TAG} > $(BUILDDIR)/container-tag
+
+pf9-push: pf9-image
+	docker push $(PF9_TAG)\
+	&& docker rmi $(PF9_TAG)
+
+scan: 
+	mkdir -p $(BUILD_ROOT)/sriov-network
+	docker run -v $(BUILD_ROOT)/sriov-network:/out -v /var/run/docker.sock:/var/run/docker.sock  aquasec/trivy image -s CRITICAL,HIGH -f json  --vuln-type library -o /out/library_vulnerabilities.json --exit-code 22 ${PF9_TAG}
+	docker run -v $(BUILD_ROOT)/sriov-network:/out -v /var/run/docker.sock:/var/run/docker.sock  aquasec/trivy image -s CRITICAL,HIGH -f json  --vuln-type os -o /out/os_vulnerabilities.json --exit-code 22 ${PF9_TAG}
 
 .PHONY: clean
 clean: ; $(info  Cleaning...) @ ## Cleanup everything
