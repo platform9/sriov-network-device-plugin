@@ -5,7 +5,8 @@ ADD images/ddptool-1.0.1.12.tar.gz /tmp/ddptool/
 
 ENV HTTP_PROXY $http_proxy
 ENV HTTPS_PROXY $https_proxy
-RUN apk add --no-cache --virtual build-dependencies build-base linux-headers git
+RUN apk add --no-cache --virtual build-dependencies linux-headers git
+RUN apk add gcc=11.2.1_git20220219-r2 g++=11.2.1_git20220219-r2 make
 
 
 WORKDIR /usr/src/sriov-network-device-plugin
@@ -13,7 +14,6 @@ RUN make clean && \
     make build
 
 WORKDIR /tmp/ddptool
-RUN gcc --version
 RUN make
 
 FROM alpine:3.16
