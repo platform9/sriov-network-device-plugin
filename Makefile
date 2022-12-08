@@ -166,7 +166,8 @@ pf9-image: | $(BUILDDIR) ; $(info Building Docker image for pf9 Repo...) @ ## Bu
 	@docker build -t $(PF9_TAG) -f $(DOCKERFILE)  $(CURDIR) $(DOCKERARGS)
 	echo ${PF9_TAG} > $(BUILDDIR)/container-tag
 
-pf9-push: pf9-image
+pf9-push: 
+	docker login
 	docker push $(PF9_TAG)\
 	&& docker rmi $(PF9_TAG)
 
