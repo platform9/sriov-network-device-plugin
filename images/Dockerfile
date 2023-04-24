@@ -14,7 +14,7 @@ RUN make clean && \
 WORKDIR /tmp/ddptool
 RUN make
 
-FROM alpine:3.15
+FROM alpine:3.16
 RUN apk add --no-cache hwdata-pci
 COPY --from=builder /usr/src/sriov-network-device-plugin/build/sriovdp /usr/bin/
 COPY --from=builder /tmp/ddptool/ddptool /usr/bin/
