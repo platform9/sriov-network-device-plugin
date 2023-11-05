@@ -36,7 +36,7 @@ COVERAGE_HTML = $(COVERAGE_DIR)/index.html
 UPSTREAM_VERSION?=$(shell git describe --tags HEAD | sed 's/-.*//' )
 
 #registry_url ?= 514845858982.dkr.ecr.us-west-1.amazonaws.com
-registry_url ?= docker.io
+registry_url ?= quay.io
 
 image_name = ${registry_url}/platform9/sriov-network-device-plugin
 image_tag = $(UPSTREAM_VERSION)-pmk-$(TEAMCITY_BUILD_ID)
